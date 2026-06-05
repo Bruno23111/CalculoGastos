@@ -116,9 +116,14 @@
               <button id="next-month"><i data-lucide="chevron-right"></i></button>
             </div>
           </div>
-          <button class="btn-primary" id="btn-add-expense">
-            <i data-lucide="plus"></i><span>Novo gasto</span>
-          </button>
+          <div class="header-actions">
+            <button class="btn-ghost" id="btn-budgets">
+              <i data-lucide="target"></i><span>Orçamentos</span>
+            </button>
+            <button class="btn-primary" id="btn-add-expense">
+              <i data-lucide="plus"></i><span>Novo gasto</span>
+            </button>
+          </div>
         </div>
 
         <div class="summary-grid">
@@ -148,6 +153,7 @@
           <div class="card">
             <div class="card-header"><h3>Por categoria</h3></div>
             <div class="chart-wrap"><canvas id="chart-categories"></canvas></div>
+          <div id="budget-bars"></div>
           </div>
           <div class="card">
             <div class="card-header"><h3>Recentes</h3></div>
@@ -183,9 +189,14 @@
           <div class="view-header-left">
             <h2 class="view-title">Todos os gastos</h2>
           </div>
-          <button class="btn-primary" id="btn-add-expense-2">
-            <i data-lucide="plus"></i><span>Novo gasto</span>
-          </button>
+          <div class="header-actions">
+            <button class="btn-ghost" id="btn-export-csv">
+              <i data-lucide="download"></i><span>Exportar CSV</span>
+            </button>
+            <button class="btn-primary" id="btn-add-expense-2">
+              <i data-lucide="plus"></i><span>Novo gasto</span>
+            </button>
+          </div>
         </div>
 
         <div class="card filter-bar">
@@ -220,12 +231,24 @@
                 <option value="vestuario">Vestuário</option>
                 <option value="educacao">Educação</option>
                 <option value="contas">Contas</option>
+                <option value="jogos">Jogos</option>
+                <option value="musica">Música</option>
                 <option value="outros">Outros</option>
               </select>
             </div>
             <div class="filter-field filter-field--grow">
               <i data-lucide="search"></i>
               <input type="text" id="filter-search" placeholder="Buscar descrição..." />
+            </div>
+            <div class="filter-field">
+              <i data-lucide="arrow-up-down"></i>
+              <select id="sort-expenses">
+                <option value="date-desc">Mais recentes</option>
+                <option value="date-asc">Mais antigos</option>
+                <option value="amount-desc">Maior valor</option>
+                <option value="amount-asc">Menor valor</option>
+                <option value="cat-az">Categoria A-Z</option>
+              </select>
             </div>
           </div>
         </div>
@@ -273,6 +296,8 @@
             <option value="vestuario">Vestuário</option>
             <option value="educacao">Educação</option>
             <option value="contas">Contas</option>
+            <option value="jogos">Jogos</option>
+            <option value="musica">Música</option>
             <option value="outros">Outros</option>
           </select>
         </div>
@@ -284,6 +309,44 @@
         <div class="modal-actions">
           <button type="button" class="btn-ghost" id="modal-cancel">Cancelar</button>
           <button type="submit" class="btn-primary">Salvar gasto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Confirm overlay -->
+  <div id="confirm-overlay" class="modal-overlay hidden">
+    <div class="modal confirm-modal">
+      <div class="modal-header">
+        <h3>Confirmar ação</h3>
+      </div>
+      <p class="confirm-msg" id="confirm-message">Tem certeza?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="confirm-cancel">Cancelar</button>
+        <button type="button" class="btn-primary btn-danger" id="confirm-ok">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget overlay -->
+  <div id="budget-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Orçamentos mensais</h3>
+        <button class="icon-btn" id="budget-close"><i data-lucide="x"></i></button>
+      </div>
+      <p style="font-size:13px;color:var(--text-m);margin-bottom:20px;line-height:1.5">
+        Defina um limite mensal por categoria. Deixe em branco para sem limite.
+      </p>
+      <form id="budget-form">
+        <div class="budget-category-list" id="budget-category-list"></div>
+        <div id="budget-error" class="form-error hidden"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="budget-cancel">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar orçamentos</button>
         </div>
       </form>
     </div>

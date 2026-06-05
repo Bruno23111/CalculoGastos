@@ -15,6 +15,8 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
+  setDoc,
   query,
   orderBy,
   serverTimestamp,
@@ -46,6 +48,8 @@ const CATEGORIES = {
   vestuario:   { label: "Vestuário",   icon: "shopping-bag" },
   educacao:    { label: "Educação",    icon: "book-open" },
   contas:      { label: "Contas",      icon: "zap" },
+  jogos:       { label: "Jogos",       icon: "gamepad-2" },
+  musica:      { label: "Música",      icon: "music" },
   outros:      { label: "Outros",      icon: "circle" },
 };
 
@@ -56,7 +60,7 @@ const MONTHS = [
 
 const CAT_COLORS = [
   "#5c7cfa","#7048e8","#c2255c","#e8590c","#2f9e44",
-  "#e67700","#1971c2","#0f9460","#6b7280",
+  "#e67700","#1971c2","#0f9460","#9c36b5","#0ca678","#6b7280",
 ];
 
 // ══════════════════════════════════════════════════════════
@@ -64,6 +68,7 @@ const CAT_COLORS = [
 // ══════════════════════════════════════════════════════════
 let currentUser  = null;
 let expenses     = [];
+let budgets      = {};
 let currentMonth = new Date().getMonth() + 1;
 let currentYear  = new Date().getFullYear();
 let viewYear     = new Date().getFullYear();
@@ -97,6 +102,40 @@ const clearErr = (id) =>
 
 const escHtml = (s) =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function showToast(msg, type = "success") {
+  const icon = type === "success" ? "check-circle" : "alert-circle";
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.innerHTML = `<i data-lucide="${icon}"></i><span>${escHtml(msg)}</span>`;
+  document.getElementById("toast-container").appendChild(el);
+  icons();
+  setTimeout(() => {
+    el.classList.add("out");
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+  }, 3000);
+}
+
+let _confirmResolve = null;
+
+function showConfirm(msg) {
+  return new Promise((resolve) => {
+    _confirmResolve = resolve;
+    document.getElementById("confirm-message").textContent = msg;
+    document.getElementById("confirm-overlay").classList.remove("hidden");
+  });
+}
+
+function _resolveConfirm(result) {
+  document.getElementById("confirm-overlay").classList.add("hidden");
+  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+}
+
+document.getElementById("confirm-ok").addEventListener("click",      () => _resolveConfirm(true));
+document.getElementById("confirm-cancel").addEventListener("click",  () => _resolveConfirm(false));
+document.getElementById("confirm-overlay").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) _resolveConfirm(false);
+});
 
 const icons = () => {
   if (window.lucide) lucide.createIcons();
@@ -172,6 +211,7 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     setUserUI(user);
     await loadExpenses();
+    await loadBudgets();
     showApp();
   } else {
     currentUser = null;
@@ -300,6 +340,92 @@ async function removeExpense(id) {
   expenses = expenses.filter((e) => e.id !== id);
 }
 
+async function loadBudgets() {
+  try {
+    const snap = await getDoc(doc(db, "users", currentUser.uid, "budgets", "config"));
+    budgets = snap.exists() ? snap.data() : {};
+  } catch {
+    budgets = {};
+  }
+}
+
+async function saveBudgets(data) {
+  await setDoc(doc(db, "users", currentUser.uid, "budgets", "config"), data);
+  budgets = data;
+}
+
+// ══════════════════════════════════════════════════════════
+//  BUDGET BARS + MODAL
+// ══════════════════════════════════════════════════════════
+function renderBudgetBars(mExp) {
+  const el = document.getElementById("budget-bars");
+  const totals = {};
+  mExp.forEach((e) => { totals[e.category] = (totals[e.category] || 0) + e.amount; });
+
+  const items = Object.entries(budgets).filter(([, limit]) => limit > 0);
+  if (items.length === 0) { el.innerHTML = ""; return; }
+
+  el.innerHTML = items.map(([cat, limit]) => {
+    const spent = totals[cat] || 0;
+    const pct   = Math.min(100, Math.round((spent / limit) * 100));
+    const over  = pct >= 90;
+    const label = CATEGORIES[cat]?.label ?? cat;
+    return `
+      <div class="budget-bar-item">
+        <div class="budget-bar-header">
+          <span class="budget-bar-label">${label}</span>
+          <span class="budget-bar-values">${fmt(spent)} / ${fmt(limit)}</span>
+        </div>
+        <progress class="budget-progress${over ? " over" : ""}" value="${pct}" max="100"></progress>
+      </div>`;
+  }).join("");
+}
+
+function openBudgetModal() {
+  const list = document.getElementById("budget-category-list");
+  list.innerHTML = Object.entries(CATEGORIES).map(([key, cat]) => `
+    <div class="budget-cat-row">
+      <span class="budget-cat-label">${cat.label}</span>
+      <input type="number" id="budget-${key}" placeholder="Sem limite"
+             min="0" step="0.01" value="${budgets[key] || ""}" />
+    </div>
+  `).join("");
+  clearErr("budget-error");
+  document.getElementById("budget-overlay").classList.remove("hidden");
+}
+
+function closeBudgetModal() {
+  document.getElementById("budget-overlay").classList.add("hidden");
+}
+
+document.getElementById("btn-budgets").addEventListener("click",   openBudgetModal);
+document.getElementById("budget-close").addEventListener("click",  closeBudgetModal);
+document.getElementById("budget-cancel").addEventListener("click", closeBudgetModal);
+document.getElementById("budget-overlay").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeBudgetModal();
+});
+
+document.getElementById("budget-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearErr("budget-error");
+  loading(true);
+  const data = {};
+  Object.keys(CATEGORIES).forEach((key) => {
+    const val = parseFloat(document.getElementById(`budget-${key}`)?.value);
+    if (val > 0) data[key] = val;
+  });
+  try {
+    await saveBudgets(data);
+    closeBudgetModal();
+    refreshDashboard();
+    showToast("Orçamentos salvos!", "success");
+  } catch (err) {
+    console.error(err);
+    showErr("budget-error", "Erro ao salvar. Tente novamente.");
+  }
+  loading(false);
+});
+
 // ══════════════════════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════
@@ -330,6 +456,7 @@ function refreshDashboard() {
 
   renderCatChart(mExp);
   renderRecentList(mExp.slice(0, 8));
+  renderBudgetBars(mExp);
 }
 
 document.getElementById("prev-month").addEventListener("click", () => {
@@ -523,6 +650,7 @@ function applyFilters() {
   const month  = document.getElementById("filter-month").value;
   const cat    = document.getElementById("filter-category").value;
   const search = document.getElementById("filter-search").value.toLowerCase();
+  const sort   = document.getElementById("sort-expenses").value;
 
   const filtered = expenses.filter((e) => {
     const [, m] = e.date.split("-");
@@ -531,6 +659,16 @@ function applyFilters() {
     if (search && !e.description.toLowerCase().includes(search)) return false;
     return true;
   });
+
+  if (sort === "date-asc")       filtered.sort((a, b) => a.date.localeCompare(b.date));
+  else if (sort === "date-desc") filtered.sort((a, b) => b.date.localeCompare(a.date));
+  else if (sort === "amount-desc") filtered.sort((a, b) => b.amount - a.amount);
+  else if (sort === "amount-asc")  filtered.sort((a, b) => a.amount - b.amount);
+  else if (sort === "cat-az")
+    filtered.sort((a, b) =>
+      (CATEGORIES[a.category]?.label ?? a.category)
+        .localeCompare(CATEGORIES[b.category]?.label ?? b.category)
+    );
 
   const list  = document.getElementById("expenses-list");
   const empty = document.getElementById("expenses-empty");
@@ -547,9 +685,44 @@ function applyFilters() {
   icons();
 }
 
-["filter-month", "filter-category", "filter-search"].forEach((id) => {
+["filter-month", "filter-category", "filter-search", "sort-expenses"].forEach((id) => {
   document.getElementById(id).addEventListener("input",  applyFilters);
   document.getElementById(id).addEventListener("change", applyFilters);
+});
+
+document.getElementById("btn-export-csv").addEventListener("click", () => {
+  const month  = document.getElementById("filter-month").value;
+  const cat    = document.getElementById("filter-category").value;
+  const search = document.getElementById("filter-search").value.toLowerCase();
+
+  const filtered = expenses.filter((e) => {
+    const [, m] = e.date.split("-");
+    if (month  && parseInt(m) !== parseInt(month)) return false;
+    if (cat    && e.category !== cat) return false;
+    if (search && !e.description.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const BOM    = "﻿";
+  const header = "Data,Descrição,Categoria,Valor";
+  const rows   = filtered.map((e) => [
+    fmtDate(e.date),
+    `"${e.description.replace(/"/g, '""')}"`,
+    CATEGORIES[e.category]?.label ?? e.category,
+    e.amount.toFixed(2).replace(".", ","),
+  ].join(","));
+
+  const csv  = BOM + [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = month
+    ? `financeflow-${String(month).padStart(2, "0")}.csv`
+    : "financeflow-todos.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("CSV exportado!", "success");
 });
 
 // ══════════════════════════════════════════════════════════
@@ -618,10 +791,11 @@ window.openEdit = (id) => {
 };
 
 window.confirmDelete = async (id) => {
-  if (!confirm("Deseja excluir este gasto?")) return;
+  if (!await showConfirm("Deseja excluir este gasto?")) return;
   loading(true);
   await removeExpense(id);
   loading(false);
+  showToast("Gasto excluído.", "success");
   afterChange();
 };
 
@@ -646,6 +820,7 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
     if (id) await editExpense(id, data);
     else    await addExpense(data);
     closeModal();
+    showToast(id ? "Gasto atualizado!" : "Gasto salvo!", "success");
     afterChange();
   } catch (err) {
     loading(false);
