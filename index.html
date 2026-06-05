@@ -1,21 +1,26 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Controle de Gastos</title>
+  <title>FinanceFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
-  <!-- ═══════════════════════════ LOGIN ═══════════════════════════ -->
+  <!-- ══════════════════════ LOGIN ══════════════════════ -->
   <div id="login-screen" class="screen active">
+    <div class="auth-bg"></div>
     <div class="auth-card">
-      <div class="auth-logo">
-        <span class="logo-icon">💰</span>
+      <div class="auth-brand">
+        <div class="brand-mark">FF</div>
         <h1>FinanceFlow</h1>
-        <p>Controle seus gastos com facilidade</p>
+        <p>Controle seus gastos com clareza</p>
       </div>
 
       <div class="auth-tabs">
@@ -23,197 +28,212 @@
         <button class="auth-tab" data-tab="register">Cadastrar</button>
       </div>
 
-      <!-- Login Form -->
       <form id="login-form" class="auth-form active">
         <div class="form-group">
-          <label>E-mail</label>
-          <input type="email" id="login-email" placeholder="seu@email.com" required />
+          <label for="login-email">E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required />
         </div>
         <div class="form-group">
-          <label>Senha</label>
-          <input type="password" id="login-password" placeholder="••••••••" required />
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
         </div>
-        <div id="login-error" class="auth-error hidden"></div>
+        <div id="login-error" class="form-error hidden"></div>
         <button type="submit" class="btn-primary btn-full">Entrar</button>
       </form>
 
-      <!-- Register Form -->
       <form id="register-form" class="auth-form">
         <div class="form-group">
-          <label>Nome</label>
-          <input type="text" id="register-name" placeholder="Seu nome" required />
+          <label for="register-name">Nome</label>
+          <input type="text" id="register-name" placeholder="Seu nome" autocomplete="name" required />
         </div>
         <div class="form-group">
-          <label>E-mail</label>
-          <input type="email" id="register-email" placeholder="seu@email.com" required />
+          <label for="register-email">E-mail</label>
+          <input type="email" id="register-email" placeholder="seu@email.com" autocomplete="email" required />
         </div>
         <div class="form-group">
-          <label>Senha</label>
-          <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required />
+          <label for="register-password">Senha</label>
+          <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required />
         </div>
-        <div id="register-error" class="auth-error hidden"></div>
-        <button type="submit" class="btn-primary btn-full">Criar Conta</button>
+        <div id="register-error" class="form-error hidden"></div>
+        <button type="submit" class="btn-primary btn-full">Criar conta</button>
       </form>
     </div>
   </div>
 
-  <!-- ═══════════════════════════ APP ═══════════════════════════ -->
+  <!-- ══════════════════════ APP ══════════════════════ -->
   <div id="app-screen" class="screen">
 
-    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-logo">
-        <span class="logo-icon">💰</span>
+      <div class="sidebar-brand">
+        <div class="brand-mark-sm">FF</div>
         <span>FinanceFlow</span>
       </div>
 
       <nav class="sidebar-nav">
         <button class="nav-item active" data-view="dashboard">
-          <span class="nav-icon">📊</span> Dashboard
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
         </button>
         <button class="nav-item" data-view="year">
-          <span class="nav-icon">📅</span> Visão Anual
+          <i data-lucide="calendar-range"></i>
+          <span>Visão Anual</span>
         </button>
         <button class="nav-item" data-view="expenses">
-          <span class="nav-icon">📋</span> Gastos
+          <i data-lucide="receipt"></i>
+          <span>Gastos</span>
         </button>
       </nav>
 
       <div class="sidebar-footer">
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">U</div>
-          <div>
+          <div class="user-meta">
             <div class="user-name" id="user-name">Usuário</div>
             <div class="user-email" id="user-email">email</div>
           </div>
         </div>
-        <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+        <div class="sidebar-controls">
+          <button class="icon-btn" id="btn-theme" title="Alternar tema">
+            <i data-lucide="moon"></i>
+          </button>
+          <button class="icon-btn" id="btn-logout" title="Sair">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
 
-      <!-- ── DASHBOARD VIEW ── -->
+      <!-- DASHBOARD -->
       <section id="view-dashboard" class="view active">
         <div class="view-header">
-          <div>
+          <div class="view-header-left">
             <h2 class="view-title">Dashboard</h2>
-            <div class="month-nav">
-              <button id="prev-month">‹</button>
+            <div class="period-nav">
+              <button id="prev-month"><i data-lucide="chevron-left"></i></button>
               <span id="current-month-label">Junho 2026</span>
-              <button id="next-month">›</button>
+              <button id="next-month"><i data-lucide="chevron-right"></i></button>
             </div>
           </div>
-          <button class="btn-primary" id="btn-add-expense">+ Novo Gasto</button>
+          <button class="btn-primary" id="btn-add-expense">
+            <i data-lucide="plus"></i><span>Novo gasto</span>
+          </button>
         </div>
 
-        <div class="summary-cards">
-          <div class="card summary-card">
-            <div class="card-label">Total do Mês</div>
-            <div class="card-value" id="total-month">R$ 0,00</div>
-            <div class="card-sub" id="total-month-count">0 gastos</div>
+        <div class="summary-grid">
+          <div class="card kpi-card">
+            <div class="kpi-label">Total do mês</div>
+            <div class="kpi-value" id="total-month">R$ 0,00</div>
+            <div class="kpi-sub" id="total-month-count">0 gastos</div>
           </div>
-          <div class="card summary-card">
-            <div class="card-label">Maior Gasto</div>
-            <div class="card-value" id="highest-expense">R$ 0,00</div>
-            <div class="card-sub" id="highest-expense-cat">–</div>
+          <div class="card kpi-card">
+            <div class="kpi-label">Maior gasto</div>
+            <div class="kpi-value" id="highest-expense">R$ 0,00</div>
+            <div class="kpi-sub" id="highest-expense-cat">–</div>
           </div>
-          <div class="card summary-card">
-            <div class="card-label">Média Diária</div>
-            <div class="card-value" id="daily-avg">R$ 0,00</div>
-            <div class="card-sub" id="daily-avg-sub">no mês</div>
+          <div class="card kpi-card">
+            <div class="kpi-label">Média diária</div>
+            <div class="kpi-value" id="daily-avg">R$ 0,00</div>
+            <div class="kpi-sub" id="daily-avg-sub">no mês</div>
           </div>
-          <div class="card summary-card">
-            <div class="card-label">Total do Ano</div>
-            <div class="card-value" id="total-year">R$ 0,00</div>
-            <div class="card-sub" id="total-year-sub">em 2026</div>
+          <div class="card kpi-card">
+            <div class="kpi-label">Total do ano</div>
+            <div class="kpi-value" id="total-year">R$ 0,00</div>
+            <div class="kpi-sub" id="total-year-sub">–</div>
           </div>
         </div>
 
         <div class="dashboard-grid">
-          <div class="card chart-card">
-            <h3>Gastos por Categoria</h3>
-            <div class="chart-container">
-              <canvas id="chart-categories"></canvas>
-            </div>
+          <div class="card">
+            <div class="card-header"><h3>Por categoria</h3></div>
+            <div class="chart-wrap"><canvas id="chart-categories"></canvas></div>
           </div>
-          <div class="card recent-card">
-            <h3>Gastos Recentes</h3>
-            <div id="recent-list" class="expense-list-compact"></div>
+          <div class="card">
+            <div class="card-header"><h3>Recentes</h3></div>
+            <div id="recent-list" class="expense-list"></div>
           </div>
         </div>
       </section>
 
-      <!-- ── YEAR VIEW ── -->
+      <!-- VISÃO ANUAL -->
       <section id="view-year" class="view">
         <div class="view-header">
-          <div>
+          <div class="view-header-left">
             <h2 class="view-title">Visão Anual</h2>
-            <div class="year-nav">
-              <button id="prev-year">‹</button>
+            <div class="period-nav">
+              <button id="prev-year"><i data-lucide="chevron-left"></i></button>
               <span id="current-year-label">2026</span>
-              <button id="next-year">›</button>
+              <button id="next-year"><i data-lucide="chevron-right"></i></button>
             </div>
           </div>
         </div>
 
-        <div class="card chart-card-full">
-          <h3>Gastos Mensais</h3>
-          <div class="chart-container-wide">
-            <canvas id="chart-months"></canvas>
-          </div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><h3>Gastos mensais</h3></div>
+          <div class="chart-wrap-wide"><canvas id="chart-months"></canvas></div>
         </div>
 
         <div class="months-grid" id="months-grid"></div>
       </section>
 
-      <!-- ── EXPENSES VIEW ── -->
+      <!-- TODOS OS GASTOS -->
       <section id="view-expenses" class="view">
         <div class="view-header">
-          <div>
-            <h2 class="view-title">Todos os Gastos</h2>
+          <div class="view-header-left">
+            <h2 class="view-title">Todos os gastos</h2>
           </div>
-          <button class="btn-primary" id="btn-add-expense-2">+ Novo Gasto</button>
+          <button class="btn-primary" id="btn-add-expense-2">
+            <i data-lucide="plus"></i><span>Novo gasto</span>
+          </button>
         </div>
 
-        <div class="card filter-card">
+        <div class="card filter-bar">
           <div class="filters">
-            <select id="filter-month">
-              <option value="">Todos os meses</option>
-              <option value="1">Janeiro</option>
-              <option value="2">Fevereiro</option>
-              <option value="3">Março</option>
-              <option value="4">Abril</option>
-              <option value="5">Maio</option>
-              <option value="6">Junho</option>
-              <option value="7">Julho</option>
-              <option value="8">Agosto</option>
-              <option value="9">Setembro</option>
-              <option value="10">Outubro</option>
-              <option value="11">Novembro</option>
-              <option value="12">Dezembro</option>
-            </select>
-            <select id="filter-category">
-              <option value="">Todas as categorias</option>
-              <option value="alimentacao">Alimentação</option>
-              <option value="transporte">Transporte</option>
-              <option value="moradia">Moradia</option>
-              <option value="lazer">Lazer</option>
-              <option value="saude">Saúde</option>
-              <option value="vestuario">Vestuário</option>
-              <option value="educacao">Educação</option>
-              <option value="contas">Contas</option>
-              <option value="outros">Outros</option>
-            </select>
-            <input type="text" id="filter-search" placeholder="Buscar descrição..." />
+            <div class="filter-field">
+              <i data-lucide="calendar"></i>
+              <select id="filter-month">
+                <option value="">Todos os meses</option>
+                <option value="1">Janeiro</option>
+                <option value="2">Fevereiro</option>
+                <option value="3">Março</option>
+                <option value="4">Abril</option>
+                <option value="5">Maio</option>
+                <option value="6">Junho</option>
+                <option value="7">Julho</option>
+                <option value="8">Agosto</option>
+                <option value="9">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <i data-lucide="tag"></i>
+              <select id="filter-category">
+                <option value="">Todas as categorias</option>
+                <option value="alimentacao">Alimentação</option>
+                <option value="transporte">Transporte</option>
+                <option value="moradia">Moradia</option>
+                <option value="lazer">Lazer</option>
+                <option value="saude">Saúde</option>
+                <option value="vestuario">Vestuário</option>
+                <option value="educacao">Educação</option>
+                <option value="contas">Contas</option>
+                <option value="outros">Outros</option>
+              </select>
+            </div>
+            <div class="filter-field filter-field--grow">
+              <i data-lucide="search"></i>
+              <input type="text" id="filter-search" placeholder="Buscar descrição..." />
+            </div>
           </div>
         </div>
 
         <div class="card">
-          <div id="expenses-list" class="expense-list"></div>
+          <div id="expenses-list" class="expense-list full"></div>
           <div id="expenses-empty" class="empty-state hidden">
-            <span>📭</span>
+            <i data-lucide="inbox"></i>
             <p>Nenhum gasto encontrado</p>
           </div>
         </div>
@@ -222,27 +242,27 @@
     </main>
   </div>
 
-  <!-- ═══════════════════════════ MODAL ═══════════════════════════ -->
+  <!-- ══════════════════════ MODAL ══════════════════════ -->
   <div id="modal-overlay" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">
-        <h3 id="modal-title">Novo Gasto</h3>
-        <button class="modal-close" id="modal-close">✕</button>
+        <h3 id="modal-title">Novo gasto</h3>
+        <button class="icon-btn" id="modal-close"><i data-lucide="x"></i></button>
       </div>
       <form id="expense-form">
         <input type="hidden" id="expense-id" />
         <div class="form-row">
           <div class="form-group">
-            <label>Valor (R$)</label>
+            <label for="expense-amount">Valor (R$)</label>
             <input type="number" id="expense-amount" placeholder="0,00" step="0.01" min="0.01" required />
           </div>
           <div class="form-group">
-            <label>Data</label>
+            <label for="expense-date">Data</label>
             <input type="date" id="expense-date" required />
           </div>
         </div>
         <div class="form-group">
-          <label>Categoria</label>
+          <label for="expense-category">Categoria</label>
           <select id="expense-category" required>
             <option value="">Selecione...</option>
             <option value="alimentacao">Alimentação</option>
@@ -257,19 +277,19 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Descrição</label>
+          <label for="expense-description">Descrição</label>
           <input type="text" id="expense-description" placeholder="Ex: Almoço no restaurante" required />
         </div>
-        <div id="expense-error" class="auth-error hidden"></div>
+        <div id="expense-error" class="form-error hidden"></div>
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="modal-cancel">Cancelar</button>
-          <button type="submit" class="btn-primary" id="btn-save">Salvar</button>
+          <button type="button" class="btn-ghost" id="modal-cancel">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar gasto</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Loading overlay -->
+  <!-- Loading -->
   <div id="loading" class="loading-overlay">
     <div class="spinner"></div>
   </div>
