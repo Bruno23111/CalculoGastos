@@ -366,8 +366,21 @@ function showApp() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  NAVIGATION
+//  NAVIGATION + MOBILE SIDEBAR
 // ══════════════════════════════════════════════════════════
+function openSidebar() {
+  document.querySelector(".sidebar").classList.add("open");
+  document.getElementById("sidebar-overlay").classList.add("active");
+}
+
+function closeSidebar() {
+  document.querySelector(".sidebar").classList.remove("open");
+  document.getElementById("sidebar-overlay").classList.remove("active");
+}
+
+document.getElementById("btn-menu").addEventListener("click", openSidebar);
+document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
+
 document.querySelectorAll(".nav-item").forEach((item) => {
   item.addEventListener("click", () => {
     document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
@@ -376,6 +389,7 @@ document.querySelectorAll(".nav-item").forEach((item) => {
     document.getElementById(`view-${item.dataset.view}`).classList.add("active");
     if (item.dataset.view === "year")     renderYearView();
     if (item.dataset.view === "expenses") renderExpensesView();
+    closeSidebar();
   });
 });
 
