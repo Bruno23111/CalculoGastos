@@ -305,6 +305,34 @@
             <option value="outros">Outros</option>
           </select>
         </div>
+        <div id="recurring-group">
+          <label class="recurring-toggle-label">
+            <span class="toggle-switch">
+              <input type="checkbox" id="expense-recurring" />
+              <span class="toggle-track"></span>
+            </span>
+            <span>Parcelar ou repetir</span>
+          </label>
+          <div id="recurring-options" class="recurring-options hidden">
+            <div class="form-group">
+              <label for="recurring-type">Tipo</label>
+              <select id="recurring-type">
+                <option value="installment">Parcelado (N vezes)</option>
+                <option value="subscription">Recorrente (assinatura)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:0">
+                <label for="recurring-count" id="recurring-count-label">Nº de parcelas</label>
+                <input type="number" id="recurring-count" min="2" max="120" placeholder="Ex: 12" />
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label for="recurring-interval">A cada (meses)</label>
+                <input type="number" id="recurring-interval" min="1" max="12" placeholder="1" value="1" />
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="form-group">
           <label for="expense-description">Descrição</label>
           <input type="text" id="expense-description" placeholder="Ex: Almoço no restaurante" required />

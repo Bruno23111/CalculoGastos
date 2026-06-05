@@ -17,6 +17,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  writeBatch,
   query,
   orderBy,
   serverTimestamp,
@@ -416,6 +417,29 @@ async function loadBudgets() {
 async function saveBudgets(data) {
   await setDoc(doc(db, "users", currentUser.uid, "budgets", "config"), data);
   budgets = data;
+}
+
+// Adds N months to a YYYY-MM-DD date string, clamping to last day of resulting month
+function addMonths(dateStr, months) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  let newM = m + months;
+  let newY = y + Math.floor((newM - 1) / 12);
+  newM = ((newM - 1) % 12) + 1;
+  const lastDay = new Date(newY, newM, 0).getDate();
+  return `${newY}-${String(newM).padStart(2,"0")}-${String(Math.min(d, lastDay)).padStart(2,"0")}`;
+}
+
+async function addExpensesBatch(items) {
+  const colRef = collection(db, "users", currentUser.uid, "expenses");
+  const batch  = writeBatch(db);
+  const newExpenses = items.map((data) => {
+    const ref = doc(colRef);
+    batch.set(ref, { ...data, createdAt: serverTimestamp() });
+    return { id: ref.id, ...data };
+  });
+  await batch.commit();
+  expenses.push(...newExpenses);
+  expenses.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -838,6 +862,9 @@ function closeModal() {
   document.getElementById("modal-overlay").classList.add("hidden");
   document.getElementById("expense-form").reset();
   document.getElementById("expense-id").value = "";
+  document.getElementById("expense-recurring").checked = false;
+  document.getElementById("recurring-options").classList.add("hidden");
+  document.getElementById("recurring-group").classList.remove("hidden");
 }
 
 document.getElementById("btn-add-expense").addEventListener("click",  openAddModal);
@@ -850,6 +877,7 @@ document.getElementById("modal-overlay").addEventListener("click", (e) => {
 
 function openAddModal() {
   document.getElementById("expense-date").value = todayISO();
+  document.getElementById("recurring-group").classList.remove("hidden");
   openModal("Novo gasto");
 }
 
@@ -861,8 +889,20 @@ window.openEdit = (id) => {
   document.getElementById("expense-date").value        = e.date;
   document.getElementById("expense-category").value    = e.category;
   document.getElementById("expense-description").value = e.description;
+  document.getElementById("recurring-group").classList.add("hidden");
   openModal("Editar gasto");
 };
+
+// Recurring toggle
+document.getElementById("expense-recurring").addEventListener("change", (ev) => {
+  document.getElementById("recurring-options").classList.toggle("hidden", !ev.target.checked);
+});
+
+document.getElementById("recurring-type").addEventListener("change", () => {
+  const type = document.getElementById("recurring-type").value;
+  document.getElementById("recurring-count-label").textContent =
+    type === "installment" ? "Nº de parcelas" : "Meses a repetir";
+});
 
 window.confirmDelete = async (id) => {
   if (!await showConfirm("Deseja excluir este gasto?")) return;
@@ -887,6 +927,37 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
   if (!date)  { showErr("expense-error", "Informe a data."); return; }
   if (!cat)   { showErr("expense-error", "Selecione uma categoria."); return; }
   if (!desc)  { showErr("expense-error", "Informe a descrição."); return; }
+
+  const isRecurring = !id && document.getElementById("expense-recurring").checked;
+  if (isRecurring) {
+    const type     = document.getElementById("recurring-type").value;
+    const count    = parseInt(document.getElementById("recurring-count").value);
+    const interval = parseInt(document.getElementById("recurring-interval").value) || 1;
+    if (!count || count < 2) { showErr("expense-error", "Informe a quantidade (mínimo 2)."); return; }
+
+    const items = Array.from({ length: count }, (_, i) => ({
+      amount,
+      date:     addMonths(date, i * interval),
+      category: cat,
+      description: type === "installment" ? `${desc} (${i + 1}/${count})` : desc,
+    }));
+
+    loading(true);
+    try {
+      await addExpensesBatch(items);
+      closeModal();
+      showToast(
+        type === "installment" ? `${count} parcelas criadas!` : `${count} meses agendados!`,
+        "success"
+      );
+      afterChange();
+    } catch (err) {
+      loading(false);
+      showErr("expense-error", "Erro ao salvar. Tente novamente.");
+      console.error(err);
+    }
+    return;
+  }
 
   loading(true);
   try {
