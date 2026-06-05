@@ -331,6 +331,7 @@ select {
 }
 
 .btn-ghost:hover { background: var(--surface-2); border-color: var(--border-2); }
+.btn-ghost svg { width: 15px; height: 15px; flex-shrink: 0; }
 
 .icon-btn {
   display: flex;
