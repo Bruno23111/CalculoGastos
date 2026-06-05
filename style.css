@@ -879,6 +879,31 @@ select {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ══════════════════════════════════════════════════════════
+   CYCLE RANGE LABEL
+══════════════════════════════════════════════════════════ */
+.cycle-range {
+  font-size: 11px;
+  color: var(--text-m);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 10px;
+  letter-spacing: .01em;
+  transition: background-color var(--dur), border-color var(--dur);
+}
+
+/* ══════════════════════════════════════════════════════════
+   SETTINGS HINT
+══════════════════════════════════════════════════════════ */
+.settings-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text-m);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════════
    HEADER ACTIONS
 ══════════════════════════════════════════════════════════ */
 .header-actions { display: flex; gap: 8px; align-items: center; }

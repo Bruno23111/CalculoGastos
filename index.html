@@ -93,6 +93,9 @@
           </div>
         </div>
         <div class="sidebar-controls">
+          <button class="icon-btn" id="btn-settings" title="Configurações">
+            <i data-lucide="settings"></i>
+          </button>
           <button class="icon-btn" id="btn-theme" title="Alternar tema">
             <i data-lucide="moon"></i>
           </button>
@@ -115,6 +118,7 @@
               <span id="current-month-label">Junho 2026</span>
               <button id="next-month"><i data-lucide="chevron-right"></i></button>
             </div>
+            <small id="cycle-range-label" class="cycle-range hidden"></small>
           </div>
           <div class="header-actions">
             <button class="btn-ghost" id="btn-budgets">
@@ -311,6 +315,30 @@
           <button type="submit" class="btn-primary">Salvar gasto</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Settings overlay -->
+  <div id="settings-overlay" class="modal-overlay hidden">
+    <div class="modal confirm-modal">
+      <div class="modal-header">
+        <h3>Configurações</h3>
+        <button class="icon-btn" id="settings-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="form-group">
+        <label for="settings-closing-day">Dia de vencimento da fatura</label>
+        <input type="number" id="settings-closing-day" placeholder="Ex: 6 (vazio = desativado)"
+               min="1" max="28" />
+        <small class="settings-hint">
+          Gastos até este dia pertencem à fatura do mês anterior. Após este dia, à fatura do mês atual.
+          Ex: vencimento dia 6 → Jun 1–6 vai para maio; Jun 7+ fica em junho.
+          Deixe em branco para usar meses calendário normais.
+        </small>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="settings-cancel">Cancelar</button>
+        <button type="button" class="btn-primary" id="settings-save">Salvar</button>
+      </div>
     </div>
   </div>
 

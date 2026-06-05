@@ -69,11 +69,22 @@ const CAT_COLORS = [
 let currentUser  = null;
 let expenses     = [];
 let budgets      = {};
-let currentMonth = new Date().getMonth() + 1;
-let currentYear  = new Date().getFullYear();
-let viewYear     = new Date().getFullYear();
+let closingDay   = parseInt(localStorage.getItem("ff-closing-day")) || 0;
 let chartCat     = null;
 let chartMonths  = null;
+
+// Determine active billing period based on closing day.
+// If today <= closingDay, we're still in the previous month's cycle.
+let currentMonth, currentYear, viewYear;
+{
+  const day = new Date().getDate();
+  let m = new Date().getMonth() + 1;
+  let y = new Date().getFullYear();
+  if (closingDay && day <= closingDay) { m--; if (m < 1) { m = 12; y--; } }
+  currentMonth = m;
+  currentYear  = y;
+  viewYear     = y;
+}
 
 // ══════════════════════════════════════════════════════════
 //  UTILS
@@ -102,6 +113,18 @@ const clearErr = (id) =>
 
 const escHtml = (s) =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+// Returns which billing period (month, year) an expense date belongs to.
+// With no closingDay: same as calendar month.
+// With closingDay=6: Jun 1-5 → May cycle; Jun 6-30 → June cycle.
+function expenseCyclePeriod(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!closingDay || d >= closingDay) return { month: m, year: y };
+  // d < closingDay: belongs to previous month's cycle
+  const prevM = m === 1 ? 12 : m - 1;
+  const prevY = m === 1 ? y - 1 : y;
+  return { month: prevM, year: prevY };
+}
 
 function showToast(msg, type = "success") {
   const icon = type === "success" ? "check-circle" : "alert-circle";
@@ -140,6 +163,47 @@ document.getElementById("confirm-overlay").addEventListener("click", (e) => {
 const icons = () => {
   if (window.lucide) lucide.createIcons();
 };
+
+// ══════════════════════════════════════════════════════════
+//  SETTINGS MODAL
+// ══════════════════════════════════════════════════════════
+function openSettingsModal() {
+  document.getElementById("settings-closing-day").value = closingDay || "";
+  document.getElementById("settings-overlay").classList.remove("hidden");
+}
+
+function closeSettingsModal() {
+  document.getElementById("settings-overlay").classList.add("hidden");
+}
+
+document.getElementById("btn-settings").addEventListener("click",     openSettingsModal);
+document.getElementById("settings-close").addEventListener("click",   closeSettingsModal);
+document.getElementById("settings-cancel").addEventListener("click",  closeSettingsModal);
+document.getElementById("settings-overlay").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeSettingsModal();
+});
+
+document.getElementById("settings-save").addEventListener("click", () => {
+  const val = parseInt(document.getElementById("settings-closing-day").value);
+  if (val >= 1 && val <= 28) {
+    closingDay = val;
+    localStorage.setItem("ff-closing-day", val);
+  } else {
+    closingDay = 0;
+    localStorage.removeItem("ff-closing-day");
+  }
+  // Recalculate active period with new closing day
+  const day = new Date().getDate();
+  let m = new Date().getMonth() + 1;
+  let y = new Date().getFullYear();
+  if (closingDay && day <= closingDay) { m--; if (m < 1) { m = 12; y--; } }
+  currentMonth = m;
+  currentYear  = y;
+  viewYear     = y;
+  closeSettingsModal();
+  refreshDashboard();
+  showToast("Configurações salvas!", "success");
+});
 
 // ══════════════════════════════════════════════════════════
 //  THEME
@@ -194,13 +258,13 @@ function redrawActiveCharts() {
 
 function monthExpenses() {
   return expenses.filter((e) => {
-    const [y, m] = e.date.split("-");
-    return parseInt(m) === currentMonth && parseInt(y) === currentYear;
+    const { month, year } = expenseCyclePeriod(e.date);
+    return month === currentMonth && year === currentYear;
   });
 }
 
 function yearExpenses(year) {
-  return expenses.filter((e) => parseInt(e.date.split("-")[0]) === year);
+  return expenses.filter((e) => expenseCyclePeriod(e.date).year === year);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -439,6 +503,18 @@ function refreshDashboard() {
   document.getElementById("current-month-label").textContent =
     `${MONTHS[currentMonth - 1]} ${currentYear}`;
 
+  const rangeEl = document.getElementById("cycle-range-label");
+  if (closingDay) {
+    const prevM = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevY = currentMonth === 1 ? currentYear - 1 : currentYear;
+    const startDay = Math.min(closingDay + 1, new Date(prevY, prevM, 0).getDate());
+    const endDay   = Math.min(closingDay, new Date(currentYear, currentMonth, 0).getDate());
+    rangeEl.textContent = `${startDay} ${MONTHS[prevM-1].slice(0,3)} → ${endDay} ${MONTHS[currentMonth-1].slice(0,3)}`;
+    rangeEl.classList.remove("hidden");
+  } else {
+    rangeEl.classList.add("hidden");
+  }
+
   document.getElementById("total-month").textContent       = fmt(total);
   document.getElementById("total-month-count").textContent =
     `${mExp.length} gasto${mExp.length !== 1 ? "s" : ""}`;
@@ -653,8 +729,7 @@ function applyFilters() {
   const sort   = document.getElementById("sort-expenses").value;
 
   const filtered = expenses.filter((e) => {
-    const [, m] = e.date.split("-");
-    if (month  && parseInt(m) !== parseInt(month)) return false;
+    if (month && expenseCyclePeriod(e.date).month !== parseInt(month)) return false;
     if (cat    && e.category !== cat) return false;
     if (search && !e.description.toLowerCase().includes(search)) return false;
     return true;
@@ -696,8 +771,7 @@ document.getElementById("btn-export-csv").addEventListener("click", () => {
   const search = document.getElementById("filter-search").value.toLowerCase();
 
   const filtered = expenses.filter((e) => {
-    const [, m] = e.date.split("-");
-    if (month  && parseInt(m) !== parseInt(month)) return false;
+    if (month && expenseCyclePeriod(e.date).month !== parseInt(month)) return false;
     if (cat    && e.category !== cat) return false;
     if (search && !e.description.toLowerCase().includes(search)) return false;
     return true;
