@@ -73,23 +73,23 @@ let currentUser  = null;
 let verifyUser   = null;
 let expenses     = [];
 let budgets      = {};
-let closingDay   = parseInt(localStorage.getItem("ff-closing-day")) || 0;
-let salary       = parseFloat(localStorage.getItem("ff-salary"))    || 0;
+let closingDay   = 0;
+let salary       = 0;
 let chartCat     = null;
 let chartMonths  = null;
 
-// Determine active billing period based on closing day.
-// If today <= closingDay, we're still in the previous month's cycle.
 let currentMonth, currentYear, viewYear;
-{
+
+function applyClosingDay() {
   const day = new Date().getDate();
   let m = new Date().getMonth() + 1;
   let y = new Date().getFullYear();
-  if (closingDay && day <= closingDay) { m--; if (m < 1) { m = 12; y--; } }
+  if (closingDay && day < closingDay) { m--; if (m < 1) { m = 12; y--; } }
   currentMonth = m;
   currentYear  = y;
   viewYear     = y;
 }
+applyClosingDay();
 
 // ══════════════════════════════════════════════════════════
 //  UTILS
@@ -189,35 +189,26 @@ document.getElementById("settings-overlay").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeSettingsModal();
 });
 
-document.getElementById("settings-save").addEventListener("click", () => {
+document.getElementById("settings-save").addEventListener("click", async () => {
   const salaryVal = parseFloat(document.getElementById("settings-salary").value);
-  if (salaryVal > 0) {
-    salary = salaryVal;
-    localStorage.setItem("ff-salary", salaryVal);
-  } else {
-    salary = 0;
-    localStorage.removeItem("ff-salary");
-  }
+  salary     = salaryVal > 0 ? salaryVal : 0;
 
-  const val = parseInt(document.getElementById("settings-closing-day").value);
-  if (val >= 1 && val <= 28) {
-    closingDay = val;
-    localStorage.setItem("ff-closing-day", val);
-  } else {
-    closingDay = 0;
-    localStorage.removeItem("ff-closing-day");
+  const cdVal = parseInt(document.getElementById("settings-closing-day").value);
+  closingDay = (cdVal >= 1 && cdVal <= 28) ? cdVal : 0;
+
+  applyClosingDay();
+
+  loading(true);
+  try {
+    await saveSettings({ salary, closingDay });
+    closeSettingsModal();
+    refreshDashboard();
+    showToast("Configurações salvas!", "success");
+  } catch (err) {
+    console.error("saveSettings:", err.code, err.message);
+    showToast("Erro ao salvar configurações.", "error");
   }
-  // Recalculate active period with new closing day
-  const day = new Date().getDate();
-  let m = new Date().getMonth() + 1;
-  let y = new Date().getFullYear();
-  if (closingDay && day <= closingDay) { m--; if (m < 1) { m = 12; y--; } }
-  currentMonth = m;
-  currentYear  = y;
-  viewYear     = y;
-  closeSettingsModal();
-  refreshDashboard();
-  showToast("Configurações salvas!", "success");
+  loading(false);
 });
 
 // ══════════════════════════════════════════════════════════
@@ -295,11 +286,15 @@ onAuthStateChanged(auth, async (user) => {
     }
     currentUser = user;
     setUserUI(user);
-    await loadExpenses();
-    await loadBudgets();
+    await Promise.all([loadSettings(), loadExpenses(), loadBudgets()]);
     showApp();
   } else {
     currentUser = null;
+    expenses   = [];
+    budgets    = {};
+    salary     = 0;
+    closingDay = 0;
+    applyClosingDay();
     showLogin();
   }
   loading(false);
@@ -425,9 +420,9 @@ document.getElementById("btn-check-verify").addEventListener("click", async () =
       hideVerifyPanel();
       currentUser = verified;
       setUserUI(verified);
-      await loadExpenses();
-      await loadBudgets();
+      await Promise.all([loadSettings(), loadExpenses(), loadBudgets()]);
       showApp();
+      loading(false);
     } else {
       loading(false);
       showErr("verify-error", "E-mail ainda não verificado. Verifique sua caixa de entrada.");
@@ -574,6 +569,24 @@ async function loadBudgets() {
 async function saveBudgets(data) {
   await setDoc(doc(db, "users", currentUser.uid, "budgets", "config"), data);
   budgets = data;
+}
+
+async function loadSettings() {
+  try {
+    const snap = await getDoc(doc(db, "users", currentUser.uid, "settings", "config"));
+    if (snap.exists()) {
+      const data = snap.data();
+      salary     = data.salary     || 0;
+      closingDay = data.closingDay || 0;
+      applyClosingDay();
+    }
+  } catch {
+    // mantém os valores padrão
+  }
+}
+
+async function saveSettings(data) {
+  await setDoc(doc(db, "users", currentUser.uid, "settings", "config"), data);
 }
 
 // Adds N months to a YYYY-MM-DD date string, clamping to last day of resulting month
