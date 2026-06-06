@@ -754,7 +754,7 @@ function refreshDashboard() {
   document.getElementById("total-year-sub").textContent = `em ${currentYear}`;
 
   renderCatChart(mExp);
-  renderRecentList(mExp.slice(0, 8));
+  renderRecentList(mExp);
   renderBudgetBars(mExp);
   renderSalaryCard(total);
 }
