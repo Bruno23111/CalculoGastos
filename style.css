@@ -1238,6 +1238,12 @@ progress.budget-progress.over::-moz-progress-bar { background: var(--danger); }
   .chart-wrap { height: 200px; }
   .chart-wrap-wide { height: 200px; }
 
+  /* actions always visible on touch (no hover) */
+  .expense-actions { opacity: 1; }
+
+  /* prevent grid cards from overflowing their column */
+  .dashboard-grid > .card { min-width: 0; }
+
   #toast-container { bottom: 16px; right: 16px; left: 16px; }
   .toast { min-width: 0; max-width: 100%; }
 }

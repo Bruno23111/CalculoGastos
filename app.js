@@ -636,6 +636,7 @@ function renderCatChart(data) {
   const labels = Object.keys(totals).map((k) => CATEGORIES[k]?.label ?? k);
   const values = Object.values(totals);
   const c = chartColors();
+  const isSmall = window.innerWidth < 700;
 
   if (chartCat) chartCat.destroy();
   const ctx = document.getElementById("chart-categories").getContext("2d");
@@ -665,6 +666,7 @@ function renderCatChart(data) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
+          display: !isSmall,
           position: "right",
           labels: {
             boxWidth: 10,
@@ -1039,3 +1041,10 @@ function afterChange() {
   if (active === "view-year")     renderYearView();
   if (active === "view-expenses") renderExpensesView();
 }
+
+// Redraw charts on resize (handles orientation change + responsive legend)
+let _resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(redrawActiveCharts, 250);
+});
