@@ -6,6 +6,8 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  sendEmailVerification,
+  sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore,
@@ -68,6 +70,7 @@ const CAT_COLORS = [
 //  STATE
 // ══════════════════════════════════════════════════════════
 let currentUser  = null;
+let verifyUser   = null;
 let expenses     = [];
 let budgets      = {};
 let closingDay   = parseInt(localStorage.getItem("ff-closing-day")) || 0;
@@ -284,6 +287,12 @@ function yearExpenses(year) {
 // ══════════════════════════════════════════════════════════
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    if (!user.emailVerified) {
+      verifyUser = user;
+      showVerifyPanel(user.email);
+      loading(false);
+      return;
+    }
     currentUser = user;
     setUserUI(user);
     await loadExpenses();
@@ -326,6 +335,8 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(cred.user, { displayName: name });
+    await sendEmailVerification(cred.user);
+    // onAuthStateChanged dispara e mostra o painel de verificação
   } catch (err) {
     loading(false);
     showErr("register-error", authMsg(err.code));
@@ -333,6 +344,118 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
 });
 
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
+
+// ── Esqueceu a senha ──────────────────────────────────────
+function showForgotForm() {
+  document.getElementById("auth-tabs").classList.add("hidden");
+  document.querySelectorAll(".auth-form").forEach((f) => f.classList.remove("active"));
+  clearErr("forgot-error");
+  document.getElementById("forgot-success").classList.add("hidden");
+  const loginEmail = document.getElementById("login-email").value.trim();
+  if (loginEmail) document.getElementById("forgot-email").value = loginEmail;
+  document.getElementById("forgot-form").classList.add("active");
+}
+
+function showLoginForm() {
+  document.getElementById("forgot-form").classList.remove("active");
+  document.getElementById("auth-tabs").classList.remove("hidden");
+  document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
+  document.querySelector('[data-tab="login"]').classList.add("active");
+  document.getElementById("login-form").classList.add("active");
+}
+
+document.getElementById("btn-forgot").addEventListener("click", (e) => {
+  e.preventDefault();
+  showForgotForm();
+});
+
+document.getElementById("btn-back-login").addEventListener("click", (e) => {
+  e.preventDefault();
+  showLoginForm();
+});
+
+document.getElementById("forgot-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearErr("forgot-error");
+  document.getElementById("forgot-success").classList.add("hidden");
+  const email = document.getElementById("forgot-email").value.trim();
+  loading(true);
+  try {
+    await sendPasswordResetEmail(auth, email);
+    loading(false);
+    document.getElementById("forgot-success").textContent = "E-mail enviado! Verifique sua caixa de entrada.";
+    document.getElementById("forgot-success").classList.remove("hidden");
+  } catch (err) {
+    loading(false);
+    showErr("forgot-error", authMsg(err.code));
+  }
+});
+
+// ── Verificação de e-mail ─────────────────────────────────
+function showVerifyPanel(email) {
+  document.getElementById("login-screen").classList.add("active");
+  document.getElementById("app-screen").classList.remove("active");
+  document.querySelectorAll(".auth-form").forEach((f) => f.classList.remove("active"));
+  document.getElementById("auth-tabs").classList.add("hidden");
+  document.getElementById("verify-email-addr").textContent = email;
+  clearErr("verify-error");
+  document.getElementById("verify-success").classList.add("hidden");
+  document.getElementById("verify-panel").classList.add("active");
+  lucide.createIcons();
+}
+
+function hideVerifyPanel() {
+  verifyUser = null;
+  document.getElementById("verify-panel").classList.remove("active");
+  document.getElementById("auth-tabs").classList.remove("hidden");
+  document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
+  document.querySelector('[data-tab="login"]').classList.add("active");
+  document.getElementById("login-form").classList.add("active");
+}
+
+document.getElementById("btn-check-verify").addEventListener("click", async () => {
+  if (!verifyUser) return;
+  clearErr("verify-error");
+  document.getElementById("verify-success").classList.add("hidden");
+  loading(true);
+  try {
+    await verifyUser.reload();
+    if (verifyUser.emailVerified) {
+      const verified = verifyUser;
+      hideVerifyPanel();
+      currentUser = verified;
+      setUserUI(verified);
+      await loadExpenses();
+      await loadBudgets();
+      showApp();
+    } else {
+      loading(false);
+      showErr("verify-error", "E-mail ainda não verificado. Verifique sua caixa de entrada.");
+    }
+  } catch {
+    loading(false);
+    showErr("verify-error", "Erro ao verificar. Tente novamente.");
+  }
+});
+
+document.getElementById("btn-resend-verify").addEventListener("click", async () => {
+  if (!verifyUser) return;
+  clearErr("verify-error");
+  document.getElementById("verify-success").classList.add("hidden");
+  try {
+    await sendEmailVerification(verifyUser);
+    document.getElementById("verify-success").textContent = "E-mail reenviado! Verifique sua caixa de entrada.";
+    document.getElementById("verify-success").classList.remove("hidden");
+  } catch (err) {
+    showErr("verify-error", authMsg(err.code));
+  }
+});
+
+document.getElementById("btn-cancel-verify").addEventListener("click", async (e) => {
+  e.preventDefault();
+  await signOut(auth);
+  hideVerifyPanel();
+});
 
 document.querySelectorAll(".auth-tab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -345,12 +468,15 @@ document.querySelectorAll(".auth-tab").forEach((tab) => {
 
 function authMsg(code) {
   const m = {
-    "auth/user-not-found":       "Usuário não encontrado.",
-    "auth/wrong-password":       "Senha incorreta.",
-    "auth/email-already-in-use": "E-mail já cadastrado.",
-    "auth/invalid-email":        "E-mail inválido.",
-    "auth/invalid-credential":   "E-mail ou senha incorretos.",
-    "auth/too-many-requests":    "Muitas tentativas. Tente mais tarde.",
+    "auth/user-not-found":          "Usuário não encontrado.",
+    "auth/wrong-password":          "Senha incorreta.",
+    "auth/email-already-in-use":    "E-mail já cadastrado.",
+    "auth/invalid-email":           "E-mail inválido.",
+    "auth/invalid-credential":      "E-mail ou senha incorretos.",
+    "auth/too-many-requests":       "Muitas tentativas. Tente novamente mais tarde.",
+    "auth/user-disabled":           "Esta conta foi desativada.",
+    "auth/network-request-failed":  "Erro de conexão. Verifique sua internet.",
+    "auth/missing-email":           "Informe um endereço de e-mail.",
   };
   return m[code] || "Ocorreu um erro. Tente novamente.";
 }
@@ -368,6 +494,12 @@ function setUserUI(user) {
 function showLogin() {
   document.getElementById("login-screen").classList.add("active");
   document.getElementById("app-screen").classList.remove("active");
+  // reset to login tab (in case user was in verify/forgot panels)
+  document.getElementById("auth-tabs").classList.remove("hidden");
+  document.querySelectorAll(".auth-form").forEach((f) => f.classList.remove("active"));
+  document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
+  document.querySelector('[data-tab="login"]').classList.add("active");
+  document.getElementById("login-form").classList.add("active");
 }
 
 function showApp() {

@@ -23,7 +23,7 @@
         <p>Controle seus gastos com clareza</p>
       </div>
 
-      <div class="auth-tabs">
+      <div class="auth-tabs" id="auth-tabs">
         <button class="auth-tab active" data-tab="login">Entrar</button>
         <button class="auth-tab" data-tab="register">Cadastrar</button>
       </div>
@@ -39,6 +39,7 @@
         </div>
         <div id="login-error" class="form-error hidden"></div>
         <button type="submit" class="btn-primary btn-full">Entrar</button>
+        <a href="#" id="btn-forgot" class="auth-link">Esqueceu a senha?</a>
       </form>
 
       <form id="register-form" class="auth-form">
@@ -57,6 +58,33 @@
         <div id="register-error" class="form-error hidden"></div>
         <button type="submit" class="btn-primary btn-full">Criar conta</button>
       </form>
+
+      <!-- Redefinir senha -->
+      <form id="forgot-form" class="auth-form">
+        <a href="#" id="btn-back-login" class="auth-back">← Voltar</a>
+        <p class="auth-hint">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
+        <div class="form-group">
+          <label for="forgot-email">E-mail</label>
+          <input type="email" id="forgot-email" placeholder="seu@email.com" autocomplete="email" required />
+        </div>
+        <div id="forgot-error" class="form-error hidden"></div>
+        <div id="forgot-success" class="form-success hidden"></div>
+        <button type="submit" class="btn-primary btn-full">Enviar link de redefinição</button>
+      </form>
+
+      <!-- Verificação de e-mail pendente -->
+      <div id="verify-panel" class="auth-form">
+        <div class="verify-icon-wrap">
+          <i data-lucide="mail-check"></i>
+        </div>
+        <h2 class="verify-title">Verifique seu e-mail</h2>
+        <p class="auth-hint">Enviamos um link para <strong id="verify-email-addr"></strong>. Clique no link e depois volte aqui.</p>
+        <div id="verify-error" class="form-error hidden"></div>
+        <div id="verify-success" class="form-success hidden"></div>
+        <button id="btn-check-verify" type="button" class="btn-primary btn-full">Já verifiquei</button>
+        <button id="btn-resend-verify" type="button" class="btn-ghost btn-full" style="margin-top:8px">Reenviar e-mail</button>
+        <a href="#" id="btn-cancel-verify" class="auth-link">Cancelar e sair</a>
+      </div>
     </div>
   </div>
 
