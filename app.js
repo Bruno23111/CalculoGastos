@@ -71,6 +71,7 @@ let currentUser  = null;
 let expenses     = [];
 let budgets      = {};
 let closingDay   = parseInt(localStorage.getItem("ff-closing-day")) || 0;
+let salary       = parseFloat(localStorage.getItem("ff-salary"))    || 0;
 let chartCat     = null;
 let chartMonths  = null;
 
@@ -169,7 +170,8 @@ const icons = () => {
 //  SETTINGS MODAL
 // ══════════════════════════════════════════════════════════
 function openSettingsModal() {
-  document.getElementById("settings-closing-day").value = closingDay || "";
+  document.getElementById("settings-salary").value      = salary      || "";
+  document.getElementById("settings-closing-day").value = closingDay  || "";
   document.getElementById("settings-overlay").classList.remove("hidden");
 }
 
@@ -185,6 +187,15 @@ document.getElementById("settings-overlay").addEventListener("click", (e) => {
 });
 
 document.getElementById("settings-save").addEventListener("click", () => {
+  const salaryVal = parseFloat(document.getElementById("settings-salary").value);
+  if (salaryVal > 0) {
+    salary = salaryVal;
+    localStorage.setItem("ff-salary", salaryVal);
+  } else {
+    salary = 0;
+    localStorage.removeItem("ff-salary");
+  }
+
   const val = parseInt(document.getElementById("settings-closing-day").value);
   if (val >= 1 && val <= 28) {
     closingDay = val;
@@ -459,6 +470,35 @@ async function addExpensesBatch(items) {
 // ══════════════════════════════════════════════════════════
 //  BUDGET BARS + MODAL
 // ══════════════════════════════════════════════════════════
+function renderSalaryCard(total) {
+  const card = document.getElementById("salary-card");
+  if (!salary || salary <= 0) { card.classList.add("hidden"); return; }
+
+  card.classList.remove("hidden");
+
+  const available = salary - total;
+  const pct       = Math.min(100, Math.round((total / salary) * 100));
+  const status    = pct >= 100 ? "over" : pct >= 75 ? "warn" : "ok";
+
+  const availEl    = document.getElementById("salary-available");
+  const progressEl = document.getElementById("salary-progress");
+  const pctEl      = document.getElementById("salary-pct");
+
+  availEl.textContent = available >= 0
+    ? `${fmt(available)} disponível`
+    : `${fmt(Math.abs(available))} acima do salário`;
+  availEl.className = `salary-available ${status}`;
+
+  progressEl.value     = pct;
+  progressEl.className = `salary-progress ${status !== "ok" ? status : ""}`;
+
+  pctEl.textContent = `${pct}%`;
+  pctEl.style.color = status === "over" ? "var(--danger)" : status === "warn" ? "var(--warning)" : "var(--text-m)";
+
+  document.getElementById("salary-amount").textContent = fmt(salary);
+  document.getElementById("salary-spent").textContent  = fmt(total);
+}
+
 function renderBudgetBars(mExp) {
   const el = document.getElementById("budget-bars");
   const totals = {};
@@ -571,6 +611,7 @@ function refreshDashboard() {
   renderCatChart(mExp);
   renderRecentList(mExp.slice(0, 8));
   renderBudgetBars(mExp);
+  renderSalaryCard(total);
 }
 
 document.getElementById("prev-month").addEventListener("click", () => {

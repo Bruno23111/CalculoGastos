@@ -1100,6 +1100,66 @@ progress.budget-progress.over::-moz-progress-bar { background: var(--danger); }
    RESPONSIVE
 ══════════════════════════════════════════════════════════ */
 /* ══════════════════════════════════════════════════════════
+   SALARY CARD
+══════════════════════════════════════════════════════════ */
+.salary-card {
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.salary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.salary-available {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.4px;
+  margin-top: 6px;
+}
+
+.salary-available.ok   { color: var(--success); }
+.salary-available.warn { color: var(--warning); }
+.salary-available.over { color: var(--danger);  }
+
+.salary-pct {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -.6px;
+  color: var(--text-m);
+  line-height: 1;
+}
+
+.salary-progress {
+  width: 100%;
+  height: 8px;
+  border: none;
+  border-radius: 99px;
+  background: var(--border);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.salary-progress::-webkit-progress-bar  { background: var(--border); border-radius: 99px; }
+.salary-progress::-webkit-progress-value { background: var(--success); border-radius: 99px; transition: background .3s; }
+.salary-progress.warn::-webkit-progress-value { background: var(--warning); }
+.salary-progress.over::-webkit-progress-value  { background: var(--danger);  }
+.salary-progress::-moz-progress-bar { background: var(--success); border-radius: 99px; }
+.salary-progress.warn::-moz-progress-bar { background: var(--warning); }
+.salary-progress.over::-moz-progress-bar  { background: var(--danger);  }
+
+.salary-details {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--text-m);
+  flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════
    MOBILE TOPBAR
 ══════════════════════════════════════════════════════════ */
 .mobile-topbar {

@@ -160,6 +160,21 @@
           </div>
         </div>
 
+        <div id="salary-card" class="card salary-card hidden">
+          <div class="salary-header">
+            <div>
+              <div class="kpi-label">Estimativa do mês</div>
+              <div class="salary-available" id="salary-available">R$ 0,00 disponível</div>
+            </div>
+            <span class="salary-pct" id="salary-pct">0%</span>
+          </div>
+          <progress id="salary-progress" class="salary-progress" value="0" max="100"></progress>
+          <div class="salary-details">
+            <span>Salário: <strong id="salary-amount">R$ 0,00</strong></span>
+            <span>Gasto: <strong id="salary-spent">R$ 0,00</strong></span>
+          </div>
+        </div>
+
         <div class="dashboard-grid">
           <div class="card">
             <div class="card-header"><h3>Por categoria</h3></div>
@@ -359,6 +374,12 @@
       <div class="modal-header">
         <h3>Configurações</h3>
         <button class="icon-btn" id="settings-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="form-group">
+        <label for="settings-salary">Salário mensal (R$)</label>
+        <input type="number" id="settings-salary" placeholder="Ex: 5000 (vazio = desativado)"
+               min="0" step="0.01" />
+        <small class="settings-hint">Mostra quanto ainda pode gastar no mês.</small>
       </div>
       <div class="form-group">
         <label for="settings-closing-day">Dia de vencimento da fatura</label>
