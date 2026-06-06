@@ -680,6 +680,16 @@ select {
 .chart-wrap { position: relative; height: 240px; padding-top: 4px; }
 .chart-wrap-wide { position: relative; height: 260px; padding-top: 4px; }
 
+#recent-list {
+  max-height: 360px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+#recent-list::-webkit-scrollbar { width: 4px; }
+#recent-list::-webkit-scrollbar-track { background: transparent; }
+#recent-list::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
 /* ══════════════════════════════════════════════════════════
    EXPENSE LIST
 ══════════════════════════════════════════════════════════ */
